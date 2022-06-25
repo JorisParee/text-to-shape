@@ -1,0 +1,612 @@
+<html>
+<body>
+<p>Welcome to this site, here you can create a layout and then make a piece of text form to the layout you created</p>
+<p>disclaimer: this is just made as hobby for myself so it can still be that some parts dont work or give unexpected results :(</p>
+<table>
+    <tr>
+        <td>
+            <label for="fill_way">Choose a filling style:</label>
+            <select name="fill_way" id="fill_way">
+                <option value="smartfill">smart fill</option>
+                <option value="strictfill">strict fill</option>
+            </select>
+        </td>
+        <td>
+            <label for="emptychar">Chose an empty char:</label>
+            <input type="text" id="emptychar" name="emptychar" maxlength="1" >
+        </td>
+        <td>
+            <label for="leftchar">Chose an char to fill leftover space:</label>
+            <input type="text" id="leftchar" name="leftchar" maxlength="1" >
+        </td>
+        <td>
+            <button id="saveseting" onclick="saveseting()" >save</button>
+        </td>
+    </tr>
+
+</table>
+
+<table>
+    <tr>
+        <td>
+            <textarea onchange ='inputchanged()' name='input' id='input' rows=20 cols = 20></textarea>
+        </td>
+        <td>
+            <p id="output" style="white-space: pre"></p>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <input type="number" name="widthnr" id="widthnr">
+            <label for="widthnr">nr of characters:</label>
+            <input type="number" name="heigthnr" id="heigthnr">
+            <label for="heigthnr">nr of lines:</label>
+            <button id="savesize" onclick="savesize()">generate</button>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <label for="emptycharexample">Chose an empty char:</label>
+            <input type="text" id="emptycharexample" name="emptycharexample" maxlength="1" >
+
+            <label for="fillcharexample">Chose an char to fill leftover space:</label>
+            <input type="text" id="fillcharexample" name="fillcharexample" maxlength="1" >
+
+            <button id="savelayoutseting" onclick="savelayoutseting()" >save</button>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <button id="updatelayout" onclick="updatelayout()" >update layout</button>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <textarea name='design' id='design'></textarea>
+        </td>
+        <td>
+            <p id="example" style="white-space: pre"></p>
+
+        </td>
+    </tr>
+</table>
+
+
+
+
+</body>
+</html>
+
+<style>
+    body {
+        font-family: 'Courier New', monospace;
+        white-space:pre;
+    }
+</style>
+<script>
+
+    //extra code needed to copy an array itself instead of its reference
+    let deepCopy = (aObject) => {
+        //If not a object then return
+        if (!aObject) {
+            return aObject;
+        }
+
+        let v;
+
+        //Check the type of the input
+        let bObject = Array.isArray(aObject) ? [] : {};
+
+        //Copy each element
+        for (const k in aObject) {
+            v = aObject[k];
+
+            //If type of element is object
+            //Then recursively call the same function and create  a copy
+            bObject[k] = (typeof v === "object") ? deepCopy(v) : v;
+        }
+
+        return bObject;
+    }
+
+
+    var defoultlayout = new Array();
+    var line = [20];
+    defoultlayout.push(line);
+    var line = new Array(9, 2, 9);
+    defoultlayout.push(line);
+    var line = new Array(8, 4, 8);
+    defoultlayout.push(line);
+    var line = new Array(5, 10, 5);
+    defoultlayout.push(line);
+    var line = new Array(3, 14, 3);
+    defoultlayout.push(line);
+    var line = new Array(1, 18, 1);
+    defoultlayout.push(line);
+    var line = new Array(3, 14, 3);
+    defoultlayout.push(line);
+    var line = new Array(5, 10, 5);
+    defoultlayout.push(line);
+    var line = new Array(8, 4, 8);
+    defoultlayout.push(line);
+    var line = new Array(9, 2, 9);
+    defoultlayout.push(line);
+    var line = [20];
+    defoultlayout.push(line);
+
+    var smartfilltype = 0;
+    var strictfilltype = 1;
+
+    var defoultspacechar = " ";
+    var defoultemptychar = " ";
+    var defoultfilltype = smartfilltype;
+    var defoultfillexamplechar = "X";
+    var defoultemptyexamplechar = defoultemptychar;
+    var defoultleftoverchar = defoultfillexamplechar;
+    var defoultlayouthigth = 10;
+    var defoultlayoutwidth = 20;
+    var defoultdesignchar = ".";
+    var defoultseperatedesignchar = "x";
+
+
+    var layout = defoultlayout;//the layout to follow with filling
+    var spacechar = defoultspacechar;//the char between words
+    var emptychar = defoultemptychar;//the char before and after sentences
+    var leftoverchar = defoultleftoverchar;//the char to put in the text to fill layout that is not yet filled
+    var filltype = defoultfilltype;//the way of filling the layout with words, either smart or strict
+    var fillexamplechar = defoultfillexamplechar;//the char used to fill the example
+    var emptyexapmlechar = defoultemptyexamplechar;//the char to use in the example where no form is
+    var designchar = defoultdesignchar;//the char in the designing textarea to show empty space
+    var seperatedesignchar = defoultseperatedesignchar;//the char in the desin area to indicate a switch
+    var layouthigth = defoultlayouthigth;//the height for the design part
+    var layoutwidth = defoultlayoutwidth;//the width for the desing part
+    var enterchar = "\n";
+
+    initialize();
+
+    function initialize(){
+        if(document.getElementById('design').value === "") {
+            setdesigntodefoult();
+        }
+        if (document.getElementById('input').value === "") {
+            document.getElementById('input').value = "type here your text";
+        }
+        updatelayout();
+
+        inputchanged();
+
+    }
+
+    function setdesigntodefoult() {
+        document.getElementById('design').value = generatedesignfromarray(deepCopy(defoultlayout));
+    }
+
+    function saveseting() {
+        filltype = document.getElementById("fill_way").selectedIndex;
+        var newemptychar = document.getElementById("emptychar").value;
+        if(validchar(newemptychar)) {
+            emptychar = newemptychar;
+        }
+        var newleftoverchar = document.getElementById('leftchar').value;
+        if (validchar(newleftoverchar)) {
+            leftoverchar = newleftoverchar;
+        }
+
+        updateall();
+    }
+
+    function savelayoutseting() {
+        var newemptychar = document.getElementById("emptycharexample").value;
+        if(validchar(newemptychar)) {
+            emptyexapmlechar = newemptychar;
+        }
+        var newfillchar = document.getElementById('fillcharexample').value;
+        if (validchar(newfillchar)) {
+            fillexamplechar = newfillchar;
+        }
+
+        updateall();
+    }
+
+    function validchar(char) {
+        return (char.length === 1 & char !== "\\")
+    }
+
+    function updateall() {
+        updatelayout();
+        inputchanged();
+    }
+
+    function savesize() {
+        layouthigth = Math.abs(document.getElementById("heigthnr").value);
+        layoutwidth = Math.abs(document.getElementById("widthnr").value);
+        layoutsetup(layoutwidth, layouthigth);
+    }
+
+
+
+
+    function layoutsetup(width, height) {
+        var textarea = document.getElementById('design');
+        textarea.cols = height;
+        textarea.rows = width;
+        textarea.value = "";
+        for (var i=0; i<height; i++) {
+            for ( var j = 0; j<width; j++) {
+                textarea.value += designchar;
+            }
+            textarea.value += enterchar;
+        }
+    }
+
+    function inputchanged() {
+        var layoutarray = deepCopy(layout);
+        var input = document.getElementById('input').value;
+        document.getElementById('output').innerText = generatetext(layoutarray, input);
+    }
+
+    function generatetext(layoutarray, inp){
+        //the input
+        var inparrchar = inp.split("");//convert input to array of each char
+        var inparrword = inp.split(" ");//convert input to array of each word
+
+
+        var currenttotaltext = "";
+        var posininpchar = 0;
+        var posininpword = 0;
+
+
+        for (var i = 0; i<layoutarray.length; i++){
+            //loop over every line
+            var currline = layoutarray[i];
+            var nowspace = true;
+            console.log("line = " + i);
+
+            for (var j = 0; j < currline.length; j++){
+                console.log("col = " + j);
+                //loop over parts in line
+
+                if(nowspace){
+                    console.log("addempty");
+                    currenttotaltext += createemptystr(emptychar, currline[j]);
+                } else if (filltype === smartfilltype) {
+                    console.log("add words");
+                    //make a way to use words and if not fit put it on next page
+                    var lengthleft = currline[j];
+                    var nrwords = 0;
+                    var currentsentance = "";
+
+                    while (lengthleft > 0){
+                        //there is length so try filling
+
+                        //if word ends wiht "\" do add word and remove space
+                        if ("\\" === (getword(inparrword, posininpword + nrwords)[getword(inparrword, posininpword + nrwords).length-1]) ) {
+                            //this word ends with a \
+                            inparrword[posininpword + nrwords] = inparrword[posininpword + nrwords].substring(0, inparrword[posininpword + nrwords].length -1);
+
+                            //so we will add the word
+                            if ( lengthleft >= inparrword[posininpword+ nrwords].length){
+                                // it just fits so easily add it
+                                currentsentance += addword(getword(inparrword[posininpword + nrwords]), nrwords);
+                                lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                                nrwords ++;
+                            } else {
+                                //the word does not fit so remove the spaces where needed
+                                //remove needed space
+                                var removespace = inparrword[posininpword + nrwords].length - lengthleft;
+                                var removeleft = Math.ceil(removespace/2);
+                                var removeright = Math.floor(removespace/2);
+
+                                currentsentance = removespacebefore(currenttext, removeleft);
+                                currline[j+1] = removespaceafter(currline, j, removeright);
+
+                                //add the word
+                                if (nrwords !== 0) {
+                                    finaltext += spacechar;
+                                    lengthleft -= 1;
+                                }
+
+                                currentsentance += addword(getword(inparrword, posininpword + nrwords));
+                                lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                                nrwords++;
+                            }
+                        } else if ("\\" === (getword(inparrword, posininpword + nrwords)[0])) {
+                            //this word will be put on next line so fill up space that is left
+                            inparrword[posininpword+ nrwords] = getword(inparrword,posininpword + nrwords).substring(1, getword(inparrword,posininpword + nrwords).length );
+
+                            //now cant put anything usefull anymore so add spaces as much as needed to lsides
+                            //also add spaces to the words in between
+
+                            //since spaces inbetween cant have been added alrady do so firts
+                            if (lengthleft > nrwords -1) {
+                                var fillspaces = nrwords -1
+                            } else {
+                                var fillspaces = lengthleft;
+                            }
+
+                            currentsentance = addspacesinbetween(currline, inparrword, posininpword, fillspaces);
+                            lengthleft -= fillspaces;
+
+                            //now if space left add spaces before and after
+                            if (lengthleft > 0) {
+                                //add needed spaces
+                                var toadd = lengthleft;
+                                var addleft = Math.floor(toadd/2);
+                                var addright = Math.ceil(toadd/2);
+
+                                currentsentance = addspacesbefore(currentsentance, addleft);
+                                lengthleft -= addleft;
+                                currentsentance = addspacesafter(currentsentance, addright);
+                                lengthleft -= addright;
+                            }
+                            lengthleft = 0;
+                        }else if (nrwords === 0){
+                            //this is the first word so nomather add it
+                            if(lengthleft >= getword(inparrword,posininpword + nrwords).length) {
+                                //the word fits so just add it
+                                currentsentance += addword(getword(inparrword,posininpword + nrwords), nrwords);
+                                lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                                nrwords++;
+                            }else{
+                                // the first word does not fit but just add it with removing before and after chars
+                                //remove needed space
+                                var removespace = getword(inparrword,posininpword + nrwords).length - lengthleft;
+                                var removeleft = Math.floor(removespace/2);
+                                var removeright = Math.ceil(removespace/2);
+
+                                //remove space from left
+                                currenttotaltext = removespacebefore(currenttotaltext, removeleft);
+                                currline[j+1] = removespaceafter(currline, j, removeright);
+
+                                //add the word
+                                currentsentance += addword(getword(inparrword,posininpword + nrwords), nrwords);
+                                lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                                nrwords++;
+                            }
+                        }else if (lengthleft >= getword(inparrword,posininpword + nrwords).length + 1 ) {
+                            //this is not first word and there is space left for it with a space
+
+                            //add next word to finaltext
+                            currentsentance += addword(getword(inparrword,posininpword + nrwords), nrwords);
+                            lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                            nrwords++;
+
+                            //after this the next word would not fit directly
+                        } else if ( lengthleft <= nrwords -1){
+                            //here the lenght left is smaller than amount of spaces
+                            //here for the first lengthleft spaces add extra space to be duble space.
+                            currentsentance = addspacesinbetween(currentsentance, inparrword, posininpword, lengthleft);
+                            lengthleft -= lengthleft;
+                        } else if (lengthleft + 2 >= getword(inparrword,posininpword + nrwords).length + 1 ) {
+                            //here if you go 1 over the side it fits so do so
+                            //also remove 1 char from spaces before line, and if needed one after line
+                            //remove needed space
+                            var removespace = getword(inparrword,posininpword + nrwords).length + 1 - lengthleft;
+                            var removeleft = Math.ceil(removespace/2);
+                            var removeright = Math.floor(removespace/2);
+
+                            //remove spaces outside
+                            currenttotaltext = removespacebefore(currenttotaltext, removeleft);
+                            currline[j+1] = removespaceafter(currline, j, removeright);
+
+                            //add the word
+                            currentsentance += addword(getword(inparrword,posininpword + nrwords), nrwords);
+                            lengthleft -= addword(getword(inparrword,posininpword + nrwords), nrwords).length;
+                            nrwords++;
+
+                        } else {
+                            //now cant put anything usefull anymore so add spaces as much as needed to lsides
+                            //also add spaces to the words in between
+
+                            //since spaces inbetween cant be added alrady do so firts
+                            if (lengthleft > nrwords -1) {
+                                var fillspaces = nrwords -1
+                            } else {
+                                var fillspaces = lengthleft;
+                            }
+
+                            currentsentance = addspacesinbetween(currentsentance, inparrword, posininpword, fillspaces);
+                            lengthleft -= fillspaces;
+
+                            //now if space left add spaces before and after
+                            if (lengthleft > 0) {
+                                //add needed spaces
+                                var toadd = lengthleft;
+                                var addleft = Math.floor(toadd/2);
+                                var addright = Math.ceil(toadd/2);
+
+                                currentsentance = addspacesbefore(currentsentance, addleft);
+                                lengthleft -= addleft;
+                                currentsentance = addspacesafter(currentsentance, addright);
+                                lengthleft -= addright;
+                            }
+                        }
+                    }
+                    posininpword += nrwords;
+                    currenttotaltext += currentsentance;
+
+                } else{
+                    //the filltype is not smartfill so it must be strictill
+
+                     //makes it such that every char is used
+                     currenttotaltext += getsliceofcharacterarray(inparrchar, posininpchar, posininpchar+ currline[j]);
+                     posininpchar += currline[j];
+                     if(getcharacter(inparrchar, posininpchar) === " "){
+                         posininpchar++
+                     }
+
+                 }
+
+                nowspace = !nowspace;
+
+            }
+            currenttotaltext += ('\n');
+        }
+
+        return currenttotaltext;
+
+
+    }
+
+    function createemptystr(char, nr) {
+        return repeatstr(char, nr);
+    }
+    
+    function addword(word, nrwords) {
+        var outp = "";
+        if (nrwords !== 0) {
+            outp += spacechar
+        }
+        outp += word;
+        return outp;
+    }
+
+    function getword(wordarray, pos) {
+        if(wordarray.length > pos){
+            return wordarray[pos]
+        }
+        return leftoverchar;
+    }
+
+    function addspacesinbetween(sentance, wordarray, startloc, nrspaces){
+        var at = 0;
+        for (var i = 0; i < nrspaces; i++){
+            at += getword(wordarray, startloc + i).length + 1;//add the word lenght to atlenght
+            sentance = sentance.substring(0, at) + spacechar + sentance.substring(at, sentance.length);
+            at += 1;
+        }
+        return sentance;
+    }
+
+
+
+
+    function removespacebefore(totaltext, nrspaces ) {//might remove text from sentance before
+        return totaltext.substring(0, totaltext.length - nrspaces);
+    }
+
+    function removespaceafter(currlinearray, currpos, nrspaces ) {
+        if (currlinearray[currpos+1] <= nrspaces) {
+            return  1;
+        }
+        return currlinearray[currpos+1] - nrspaces;
+    }
+
+    function addspacesbefore(totalsentance, nrspaces) {
+        return createemptystr(emptychar, nrspaces) + totalsentance;
+    }
+
+    function addspacesafter(totalsentance, nrspaces) {
+        return totalsentance + createemptystr(emptychar, nrspaces);
+    }
+
+
+    function getsliceofcharacterarray(array, start, end) {
+        return array.slice(start, end).join("");
+    }
+
+    function getcharacter(array, pos) {
+        return array[pos]
+    }
+
+
+
+
+
+
+
+
+
+
+
+    function updatelayout() {
+        layout = deepCopy(generatearray());
+        document.getElementById('example').innerText = generateexample(deepCopy(layout));
+        inputchanged();
+    }
+
+    //generates the array from the design text
+    //note that x is included in text space
+    //note that there is assumed that te number of x's is even. so the begin and end are of empty chars
+    function generatearray() {
+        var input = document.getElementById('design').value;
+        var inparr = input.split("");
+        var outparr = [];
+        var line = [];
+        var count = 0;
+        for (var i = 0; i<inparr.length; i++){
+            if(inparr[i] === enterchar){
+                line.push(count);
+                outparr.push(line);
+                line = [];
+                count = 0;
+            }
+            if(inparr[i] === designchar){
+                count ++;
+            }
+            if (inparr[i] === seperatedesignchar) {
+                if (line.length % 2 === 1) {
+                    //if in textarea add 2 spaces for the x's
+                    count += 2;
+                }
+                line.push(count);
+                count = 0;
+            }
+        }
+        return outparr;
+    }
+
+    function generatedesignfromarray(array){
+        var output = "";
+        for (var i = 0; i < array.length; i++) {
+            //loopt trough line
+            var currline = array[i];
+            for (var j = 0; j < currline.length; j++) {
+                //loop trough sentences
+                if (j % 2 === 1) {
+                    //currently in a text piece, but remove spaces from the x
+                    currline[j] -=2;
+                }
+                output += repeatstr(designchar, currline[j]);
+                if (j !== currline.length - 1) {
+                    //check to not be in the last line couse else not add a x
+                    output += seperatedesignchar;
+
+                }
+            }
+            output += enterchar
+        }
+        return output;
+    }
+
+    //generates the example from an layoutarray
+    function generateexample(array) {
+        var outpstring = "";
+        for (var i =0; i<array.length; i++){
+            var fill = false;
+            var currline = array[i];
+            for (var j =0; j<currline.length; j++){
+                if(!fill){
+                    outpstring += repeatstr(emptyexapmlechar, currline[j]);
+                }else {
+                    outpstring += repeatstr(fillexamplechar, currline[j]);
+                }
+                fill = !fill;
+
+            }
+            outpstring += "\n";
+        }
+        return outpstring;
+    }
+
+    function repeatstr(str, num) {
+        var outp ="";
+        for(var i = 0; i < num; i++){
+            outp += str;
+        }
+        return outp
+    }
+
+
+
+</script>
